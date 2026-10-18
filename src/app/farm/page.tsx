@@ -6,7 +6,7 @@ import UnlockModal from "@/components/UnlockModal/UnlockModal";
 import BoostModal from "@/components/BoostModal/BoostModal";
 import Breadcrumbs from "@/components/Breadcrumbs/Breadcrumbs";
 import TransactionConfirmModal from "@/components/TransactionConfirmModal/TransactionConfirmModal";
-import { formatFeeEstimate } from "@/lib/fees";
+import FieldError from "@/components/FieldError/FieldError";
 import { EarningRow, MetricColumn } from "@/app/farm/EarningRow";
 import { FarmPoolRow } from "@/app/farm/FarmPoolRow";
 import {
@@ -50,7 +50,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useOwnConnectButton } from "@/context/OwnConnectButtonContext";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const ACCENT = "#4AE292";
 
@@ -118,6 +118,13 @@ function DepositModal({
     amountValid &&
     typeof availableBalance === "number" &&
     numericAmount > availableBalance;
+  const amountError =
+    !!trimmedAmount && !amountValid
+      ? "Enter a positive amount with no more than 7 decimals."
+      : exceedsBalance
+        ? "Amount exceeds your Horizon XLM balance."
+        : null;
+  const amountErrorId = useId();
   const feePreview = useLockAssetsFeePreview({
     publicKey,
     poolContractId: selectedContractAddress,
@@ -261,6 +268,8 @@ function DepositModal({
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                   isDisabled={isPending}
+                  isInvalid={Boolean(amountError)}
+                  aria-describedby={amountErrorId}
                   borderRadius="2xl"
                   h="50px"
                   borderColor="app.border"
@@ -282,16 +291,7 @@ function DepositModal({
                   {farm.symbol}
                 </Text>
               </Box>
-              {!!trimmedAmount && !amountValid && (
-                <Text fontSize="xs" color="app.errorFg">
-                  Enter a positive amount with no more than 7 decimals.
-                </Text>
-              )}
-              {exceedsBalance && (
-                <Text fontSize="xs" color="app.errorFg">
-                  Amount exceeds your Horizon XLM balance.
-                </Text>
-              )}
+              <FieldError id={amountErrorId} message={amountError} />
             </Flex>
 
             {isPending && (
@@ -537,15 +537,17 @@ export default function Farm() {
     });
   }, [pools, userPositions]);
 
-  const handleDepositClick = (pool: LivePoolRow) => {
+  // Stable references so the memoized FarmPoolRow children
+  // don't receive a new callback on every wallet or query update.
+  const handleDepositClick = useCallback((pool: LivePoolRow) => {
     setSelectedFarm(pool);
     setIsDepositOpen(true);
-  };
+  }, []);
 
-  const handleDepositClose = () => {
+  const handleDepositClose = useCallback(() => {
     setIsDepositOpen(false);
     setSelectedFarm(null);
-  };
+  }, []);
 
   const hasPositions = myPositions.length > 0;
 

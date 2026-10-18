@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "feat/gas-fee-estimate-before-confirm",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "feat/gas-fee-estimate-before-confirm": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "feat/gas-fee-estimate-before-confirm",
+    "origin"
+  ]
+}
